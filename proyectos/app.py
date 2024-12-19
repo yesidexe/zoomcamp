@@ -13,4 +13,3 @@ if __name__ == '__main__':
 
 # uvicorn app:app --reload --host 127.0.0.1 --port 9696
 # curl http://127.0.0.1:9696/app
-
