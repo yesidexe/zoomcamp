@@ -1,36 +1,31 @@
 from joblib import load
+import numpy as np
 import pandas as pd
-from fastapi import FastAPI, Request
-import uvicorn
+
+from flask import Flask, request, jsonify
+
+def predict_single(customer, model):
+    customer_df = pd.DataFrame([customer])  
+    y_pred = model.predict_proba(customer_df)[:, 1]
+    return y_pred[0]
 
 modelo = load('modelo_churn.joblib')
-app = FastAPI()
 
-@app.post("/predict")
-async def predict(request: Request):
-    customer_data = await request.json()
-    
-    expected_columns = ['gender', 'seniorcitizen', 'partner', 'dependents',
-        'tenure', 'phoneservice', 'multiplelines', 'internetservice',
-        'onlinesecurity', 'onlinebackup', 'deviceprotection', 'techsupport',
-        'streamingtv', 'streamingmovies', 'contract', 'paperlessbilling',
-        'paymentmethod', 'monthlycharges', 'totalcharges'
-    ]
-    
-    customer_data_list = pd.DataFrame([customer_data], columns=expected_columns)
-        
-    y_pred = modelo.predict(customer_data_list)
-    churn = y_pred[0] >= 0.5
-    
+app = Flask('churn')
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    customer = request.get_json()
+    prediction = predict_single(customer, modelo)
+    churn = prediction >= 0.5
     result = {
-        'churn_probability': float(y_pred[0]),
+        'churn_probability': float(prediction),
         'churn': bool(churn)
     }
-    
-    return result
+    return jsonify(result)
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='127.0.0.1', port=9696)
+    app.run(debug=True, host='127.0.0.1', port=9696)
 
 
 
