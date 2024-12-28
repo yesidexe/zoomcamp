@@ -1,5 +1,8 @@
-from turtle import clone
-from joblib import dump
+# Importaciones estándar de Python
+import logging
+from typing import Tuple, Dict
+
+# Bibliotecas externas
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
@@ -7,9 +10,11 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import recall_score, accuracy_score, classification_report
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.pipeline import Pipeline
-import logging
-from typing import Tuple, Dict
 
+# Guardado de modelos
+from joblib import dump
+
+# Módulos personalizados
 from custom_transformers import YesNoTransformer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -19,10 +24,9 @@ class ChurnPredictor:
         self.random_state = random_state
         self.model_pipeline = None
         self.feature_columns = {
-            'yes_no': ['partner', 'dependents', 'phoneservice', 'paperlessbilling'],
             # Variables del one hot encoding
             'categorical': ['gender', 'multiplelines', 'internetservice',
-                            'onlinesecurity', 'onlinebackup', 'deviceprotection', 'techsupport', 'streamingtv', 'streamingmovies', 'contract', 'paymentmethod'],
+                            'onlinesecurity', 'onlinebackup', 'deviceprotection', 'techsupport', 'streamingtv', 'streamingmovies', 'contract', 'paymentmethod', 'partner', 'dependents', 'phoneservice', 'paperlessbilling'],
             # Varibales para escalar
             'numerical': ['tenure', 'monthlycharges', 'totalcharges'],
             # Variables para omitir
@@ -51,7 +55,7 @@ class ChurnPredictor:
         
     def create_pipeline(self) -> Pipeline:
         try:
-            yes_no = YesNoTransformer()            
+            # yes_no = YesNoTransformer()            
             one_hot_encoding = OneHotEncoder(sparse_output=False, handle_unknown='ignore')            
             scaler = MinMaxScaler()
             
@@ -59,7 +63,7 @@ class ChurnPredictor:
                 transformers=[
                     ('scaler', scaler, self.feature_columns['numerical']),
                     ('one_hot_encoding', one_hot_encoding, self.feature_columns['categorical']),
-                    ('yes_no', yes_no, self.feature_columns['yes_no']),
+                    #('yes_no', yes_no, self.feature_columns['yes_no']),
                     ('passthrough', 'passthrough', self.feature_columns['passthrough'])
                 ]
             )
