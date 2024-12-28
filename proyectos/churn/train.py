@@ -1,20 +1,20 @@
-from joblib import dump, load
+from turtle import clone
+from joblib import dump
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
-from custom_transformers import YesNoTransformer
-from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import recall_score, accuracy_score, classification_report
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.pipeline import FeatureUnion, Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.base import clone
+from sklearn.pipeline import Pipeline
 import logging
 from typing import Tuple, Dict
 
+from custom_transformers import YesNoTransformer
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class ChurnPredictor:
+class ChurnPredictor:    
     def __init__(self, random_state: int = 42):
         self.random_state = random_state
         self.model_pipeline = None
@@ -34,20 +34,11 @@ class ChurnPredictor:
             df = pd.read_csv(filepath)
             logging.info(f"Data loaded successfully. {filepath}")
             
-            # Limpieza de datos
             df=df.drop(columns=['customerID'])
-            df['TotalCharges'] = pd.to_numeric(df['TotalCharges'].replace(' ', '0'), errors='coerce').fillna(0)
-
-            # Verificar valores nulos
-            null_counts = df.isnull().sum()
-            if null_counts.any():
-                logging.warning(f"Valores nulos encontrados:\n{null_counts[null_counts > 0]}")
-            
-            # Normalización de nombres de columnas
             df.columns = df.columns.str.lower().str.replace(' ', '_')
-            
-            # Convertir variable objetivo
-            df['churn'] = df['churn'].map({"No": 0, "Yes": 1})
+            df['totalcharges'] = pd.to_numeric(df['totalcharges'].replace(' ', '0'), errors='coerce').fillna(0)
+
+            df['churn'] = (df['churn'].str.lower() == 'yes').astype(int)
             
             X = df.drop('churn', axis=1)
             y = df['churn']
@@ -60,42 +51,28 @@ class ChurnPredictor:
         
     def create_pipeline(self) -> Pipeline:
         try:
-            # Transformadores
-            yes_no = Pipeline([
-                ('imputer', SimpleImputer(strategy='constant', fill_value='no')),
-                ('yes_no',YesNoTransformer())
-            ])
+            yes_no = YesNoTransformer()            
+            one_hot_encoding = OneHotEncoder(sparse_output=False, handle_unknown='ignore')            
+            scaler = MinMaxScaler()
             
-            one_hot_encoding = Pipeline([
-                ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-                ('one_hot_encode', OneHotEncoder(sparse_output=False, handle_unknown='ignore'))
-            ])
-            
-            scaler = Pipeline([
-                ('imputer', SimpleImputer(strategy='median')),
-                ('scaler',MinMaxScaler())
-            ])
-            
-            passthrough = ColumnTransformer([
-                ('passthrough',
-                'passthrough',
-                self.feature_columns['passthrough'])
-            ])
-            
-            # Pipeline de features
             feature_ingineering_pipe = ColumnTransformer(
                 transformers=[
                     ('scaler', scaler, self.feature_columns['numerical']),
                     ('one_hot_encoding', one_hot_encoding, self.feature_columns['categorical']),
                     ('yes_no', yes_no, self.feature_columns['yes_no']),
-                    ('passthrough', passthrough, self.feature_columns['passthrough'])
+                    ('passthrough', 'passthrough', self.feature_columns['passthrough'])
                 ]
             )
             
             # pipeline completo
             self.model_pipeline = Pipeline([
-                ('Feature_engineering', clone(feature_ingineering_pipe)),
-                ('model', LogisticRegression(random_state=self.random_state))
+                ('Feature_engineering', feature_ingineering_pipe),
+                ('model', HistGradientBoostingClassifier(
+                    random_state=self.random_state,
+                    max_depth=5,
+                    learning_rate=0.1,
+                    max_iter=100
+                ))
             ])
             
             return self.model_pipeline

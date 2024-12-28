@@ -7,11 +7,16 @@ from flask import Flask, request, jsonify
 def prepare_data(customer):
     customer_df = pd.DataFrame([customer])
     customer_df.columns = customer_df.columns.str.lower().str.replace(' ', '_')
-    customer_df = customer_df.drop('customerid', axis=1)
+    if 'customerid' in customer_df.columns:
+            customer_df = customer_df.drop('customerid', axis=1)
     
     numeric_columns = ['tenure', 'monthlycharges', 'totalcharges']
     for col in numeric_columns:
-            customer_df[col] = pd.to_numeric(customer_df[col], errors='raise')
+            customer_df[col] = pd.to_numeric(customer_df[col], errors='coerce')
+    
+    null_columns = customer_df.columns[customer_df.isna().any()].tolist()
+    if null_columns:
+        raise ValueError(f"Missing values found in columns: {null_columns}")
     
     return customer_df
 
