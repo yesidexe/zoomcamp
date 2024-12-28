@@ -13,7 +13,11 @@ class YesNoTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        X_copy = X.copy()        
-        for j in range(X.shape[1]):
-            X_copy[X.columns[j]] = X.iloc[:, j].map(self.map_dict)
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X)
+        
+        X_copy = X.copy()
+        
+        for j in X_copy.columns:
+            X_copy[j] = X_copy[j].map(self.map_dict)
         return X_copy
