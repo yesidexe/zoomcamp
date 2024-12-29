@@ -14,9 +14,6 @@ from sklearn.pipeline import Pipeline
 # Guardado de modelos
 from joblib import dump
 
-# Módulos personalizados
-from custom_transformers import YesNoTransformer
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class ChurnPredictor:    
