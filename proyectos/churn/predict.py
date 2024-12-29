@@ -8,6 +8,8 @@ from flask import Flask, request, jsonify
 # Importaciones locales
 from joblib import load
 
+from waitress import serve
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,7 @@ def predict():
         return jsonify({'error': str(e)}), 400
     
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=9696)
+    serve(app, host='127.0.0.1', port=9696)
 
 
 
