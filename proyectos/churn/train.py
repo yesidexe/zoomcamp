@@ -24,7 +24,7 @@ class ChurnPredictor:
         self.random_state = random_state
         self.model_pipeline = None
         self.feature_columns = {
-            # Variables del one hot encoding
+            # Variables del one hot encoding, incluyendo las de yes/no, que son ['partner', 'dependents', 'phoneservice', 'paperlessbilling'] 
             'categorical': ['gender', 'multiplelines', 'internetservice',
                             'onlinesecurity', 'onlinebackup', 'deviceprotection', 'techsupport', 'streamingtv', 'streamingmovies', 'contract', 'paymentmethod', 'partner', 'dependents', 'phoneservice', 'paperlessbilling'],
             # Varibales para escalar
@@ -38,12 +38,15 @@ class ChurnPredictor:
             df = pd.read_csv(filepath)
             logging.info(f"Data loaded successfully. {filepath}")
             
+            # Limpio y transformo los datos
             df=df.drop(columns=['customerID'])
             df.columns = df.columns.str.lower().str.replace(' ', '_')
             df['totalcharges'] = pd.to_numeric(df['totalcharges'].replace(' ', '0'), errors='coerce').fillna(0)
 
+            # transformo la variable objetivo
             df['churn'] = (df['churn'].str.lower() == 'yes').astype(int)
             
+            # separo los datos
             X = df.drop('churn', axis=1)
             y = df['churn']
             
@@ -55,7 +58,7 @@ class ChurnPredictor:
         
     def create_pipeline(self) -> Pipeline:
         try:
-            # yes_no = YesNoTransformer()            
+            # Solo usaré encoding y un escalador
             one_hot_encoding = OneHotEncoder(sparse_output=False, handle_unknown='ignore')            
             scaler = MinMaxScaler()
             
@@ -63,7 +66,6 @@ class ChurnPredictor:
                 transformers=[
                     ('scaler', scaler, self.feature_columns['numerical']),
                     ('one_hot_encoding', one_hot_encoding, self.feature_columns['categorical']),
-                    #('yes_no', yes_no, self.feature_columns['yes_no']),
                     ('passthrough', 'passthrough', self.feature_columns['passthrough'])
                 ]
             )
@@ -85,25 +87,16 @@ class ChurnPredictor:
             logging.error(f"Error al crear el pipeline: {str(e)}")
             raise
     
-    def train_and_evaluate(self, X: pd.DataFrame, y: pd.Series, test_size: float = 0.2, valid_size: float = 0.2) -> Dict:
+    def train_and_evaluate(self, X: pd.DataFrame, y: pd.Series) -> Dict:
         try:
-            # Train-test split
-            x_train, x_rest, y_train, y_rest = train_test_split(X, y, test_size=test_size + valid_size, random_state=self.random_state, stratify=y)         
-            x_valid, x_test, y_valid, y_test = train_test_split(x_rest, y_rest, test_size=0.5, random_state=self.random_state, stratify=y_rest)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=self.random_state)
             
-            logging.info(f"Train shape: {x_train.shape}, Valid shape: {x_valid.shape}, Test shape: {x_test.shape}")
+            self.model_pipeline.fit(X_train, y_train)
             
-            # Entrenamiento
-            df_x = pd.concat([x_train, x_valid])
-            df_y = pd.concat([y_train, y_valid])
-            
-            self.model_pipeline.fit(df_x, df_y)
-            
-            # Evaluación
-            test_pred_y = self.model_pipeline.predict(x_test)
+            test_pred_y = self.model_pipeline.predict(X_test)
             
             # cross-validation
-            cv_scores = cross_val_score(self.model_pipeline, df_x, df_y, cv=5)
+            cv_scores = cross_val_score(self.model_pipeline, X_train, y_train, cv=5)
             
             metrics = {
                 'accuracy': accuracy_score(y_test, test_pred_y),
