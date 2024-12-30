@@ -6,3 +6,9 @@
 - No lo probé con randomforest
 - Principalmente lo probé con train, test y val, pero el final lo haré sin val
 - `custom_transformers.py` lo hice sin este archivo y me dio el mismo rendimiento, así que por ahora no lo voy a usar, pero lo dejaré por si se quiere usar.
+
+## Uso de docker
+- Abrir el Docker Desktop
+- Hago el build, `docker build -t zoomcamp-test .`
+- Lo corro de esta manera para poder ver los archivos, `docker run -it --rm --entrypoint=bash zoomcamp-test:latest`
+- Y para ejecutar el server de waitress, `docker run -it --rm -p 9696:9696 zoomcamp-test:latest`

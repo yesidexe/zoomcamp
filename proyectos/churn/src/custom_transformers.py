@@ -1,5 +1,4 @@
 import pandas as pd
-from copy import deepcopy # El deep copy me copia hiperparámetros
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class YesNoTransformer(BaseEstimator, TransformerMixin):

@@ -8,8 +8,8 @@ COPY Pipfile.lock /app/
 
 RUN pipenv install --system --deploy
 
-COPY predict.py /app/
-COPY modelo_churn.joblib /app/
+COPY src/predict.py /app/
+COPY data/modelo_churn.joblib /app/
 
 EXPOSE 9696
 
