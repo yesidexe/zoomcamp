@@ -12,3 +12,5 @@
 - Hago el build, `docker build -t churn-prediction .`
 - Lo corro de esta manera para poder ver los archivos, `docker run -it --rm --entrypoint=bash churn-prediction:latest`
 - Y para ejecutar el server de waitress, `docker run -it --rm -p 9696:9696 churn-prediction:latest`
+
+## AWS
