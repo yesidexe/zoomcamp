@@ -1,0 +1,2 @@
+- clothing-dataset-small: https://github.com/alexeygrigorev/clothing-dataset-small
+- clothing-full-dataset: https://github.com/alexeygrigorev/clothing-dataset, https://www.kaggle.com/datasets/agrigorev/clothing-dataset-full
